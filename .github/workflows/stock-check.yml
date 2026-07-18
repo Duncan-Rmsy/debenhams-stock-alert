@@ -8,7 +8,12 @@ on:
   schedule:
     # Every 30 minutes. GitHub Actions cron can lag a few minutes under load.
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: "Send a test email to verify SMTP delivery (does not affect stock detection or state)."
+        type: boolean
+        default: false
 
 # Needed so the job can commit the updated state.json back to the branch.
 permissions:
@@ -40,6 +45,29 @@ jobs:
           echo "status=${{ steps.check.outputs.status }}"
           echo "should_alert=${{ steps.check.outputs.should_alert }}"
           echo "price=${{ steps.check.outputs.price }}"
+
+      - name: Send test email
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_email == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: Debenhams Stock Alert <${{ secrets.SMTP_USERNAME }}>
+          to: duncan.ramsay@gmail.com
+          subject: "TEST: Debenhams stock alert email delivery"
+          body: |
+            This is a test email from the Debenhams stock-check GitHub Action.
+
+            If you received this, SMTP delivery is configured correctly and the
+            real "IN STOCK" alert will reach you when the Royce Executive 3m
+            Cantilever (£539) comes back in stock.
+
+            Detected status this run: ${{ steps.check.outputs.status }}
+
+            — Triggered manually via the workflow's "test_email" option.
 
       - name: Send in-stock email
         if: steps.check.outputs.should_alert == 'true'

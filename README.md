@@ -72,6 +72,13 @@ Once the secrets are set, go to the **Actions** tab → **Debenhams stock check*
 the detected status; an email is sent only if the item is in stock and wasn't
 already flagged as in stock on a prior run.
 
+### Testing email delivery
+
+The manual **Run workflow** dialog has a **"Send a test email"** checkbox
+(`test_email`). Tick it to send a clearly-labelled test message through the same
+SMTP settings so you can confirm delivery works without waiting for the item to
+come back in stock. It does not affect stock detection or `state.json`.
+
 ## Local testing
 
 ```bash
