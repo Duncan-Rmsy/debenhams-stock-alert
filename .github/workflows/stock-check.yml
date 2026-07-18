@@ -1,0 +1,87 @@
+name: Debenhams stock check
+
+# Monitors the Norfolk Leisure "Royce Executive 3m Cantilever" parasol and emails
+# duncan.ramsay@gmail.com when it transitions from out of stock to in stock.
+
+on:
+  schedule:
+    # Every 30 minutes. GitHub Actions cron can lag a few minutes under load.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+# Needed so the job can commit the updated state.json back to the branch.
+permissions:
+  contents: write
+
+# Avoid overlapping runs racing on the committed state file.
+concurrency:
+  group: stock-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check stock
+        id: check
+        run: python check_stock.py
+
+      - name: Report result
+        run: |
+          echo "status=${{ steps.check.outputs.status }}"
+          echo "should_alert=${{ steps.check.outputs.should_alert }}"
+          echo "price=${{ steps.check.outputs.price }}"
+
+      - name: Send in-stock email
+        if: steps.check.outputs.should_alert == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: Debenhams Stock Alert <${{ secrets.SMTP_USERNAME }}>
+          to: duncan.ramsay@gmail.com
+          subject: "IN STOCK: Royce Executive 3m Cantilever (£539) — Debenhams"
+          body: |
+            The Norfolk Leisure "Royce Executive 3m Cantilever with Taupe Canopy,
+            Cover & Base" appears to be IN STOCK on Debenhams.
+
+            Current price: ${{ steps.check.outputs.price }}
+
+            Buy it here:
+            ${{ steps.check.outputs.url }}
+
+            (SKU M5060694431646, sold by Norfolk Leisure Lifestyle Limited.)
+
+            — Automated check by the stock-check GitHub Action.
+
+      - name: Persist state
+        if: always()
+        run: |
+          if [[ -n "$(git status --porcelain state.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "chore: update stock state [skip ci]"
+            # Retry push a few times in case another run pushed first.
+            for attempt in 1 2 3; do
+              if git push; then
+                break
+              fi
+              echo "Push failed (attempt $attempt); rebasing and retrying..."
+              git pull --rebase --autostash || true
+              sleep $((attempt * 2))
+            done
+          else
+            echo "No state change to commit."
+          fi
