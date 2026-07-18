@@ -6,8 +6,14 @@ name: Debenhams stock check
 
 on:
   schedule:
-    # Every 30 minutes. GitHub Actions cron can lag a few minutes under load.
-    - cron: "*/30 * * * *"
+    # Twice daily, at ~09:30 and ~15:00 UK time. GitHub Actions cron is always
+    # UTC and does NOT observe daylight saving, so these are pinned to the BST
+    # (British Summer Time, UTC+1) offset: 08:30 UTC = 09:30 BST, 14:00 UTC =
+    # 15:00 BST. When the UK is on GMT (winter, UTC+0) they run at 08:30 and
+    # 14:00 local; change to "30 9" and "0 15" if you want 09:30/15:00 during
+    # GMT. Cron can also lag a few minutes under load.
+    - cron: "30 8 * * *"
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       test_email:
