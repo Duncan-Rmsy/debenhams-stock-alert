@@ -2,6 +2,7 @@ name: Debenhams stock check
 
 # Monitors the Norfolk Leisure "Royce Executive 3m Cantilever" parasol and emails
 # duncan.ramsay@gmail.com when it transitions from out of stock to in stock.
+# Manual runs: Actions tab -> "Debenhams stock check" -> Run workflow.
 
 on:
   schedule:
