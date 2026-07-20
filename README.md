@@ -1,7 +1,6 @@
 # Debenhams stock alert
 
-A GitHub Actions cron job that watches a single Debenhams product and emails
-[duncan.ramsay@gmail.com](mailto:duncan.ramsay@gmail.com) when it goes **back in
+A GitHub Actions cron job that watches a single Debenhams product and emails when it goes **back in
 stock**.
 
 **Watched product:** Norfolk Leisure "Royce Executive 3m Cantilever with Taupe
@@ -58,7 +57,7 @@ true` to `secure: false` in the workflow.
 
 ## The email
 
-- **To:** duncan.ramsay@gmail.com
+- **To:** [recipient]
 - **Subject:** `IN STOCK: Royce Executive 3m Cantilever (£539) — Debenhams`
 - **Body:** the current price plus the direct product URL.
 
